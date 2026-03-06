@@ -111,7 +111,8 @@
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(32,76,141,0.08);
     }
-    textarea { resize: vertical; min-height: 64px; }
+    textarea { resize: vertical; min-height: 64px; width: 100%; }
+    input, select { width: 100%; }
 
     /* ── BADGES ── */
     .badge       { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
@@ -178,11 +179,11 @@
     const WORKER_URL = "https://salesflow-proxy.rickhermanns.workers.dev";
 
     const EXAMPLE_LEADS = [
-      { name: "Peter van den Berg",    company: "Van den Berg Verpakkingen BV",  role: "Productiemanager",    sector: "Golfkarton",              size: "50–150 fte",  context: "Recent geïnvesteerd in nieuwe flexopers, klagen over wisselende drukkwaliteit en hoog inktverbruik. Nog geen vaste reinigingspartner voor anilox rollen." },
-      { name: "Sabine Meijer",         company: "FlexPack Nederland",            role: "Technisch Directeur", sector: "Flexibele verpakkingen",   size: "80–200 fte",  context: "Willen watergebaseerde inkten invoeren. Huidige reinigingsmiddelen niet geschikt voor nieuwe inktsystemen." },
-      { name: "Joost Hendriksen",      company: "Hendriksen Label & Print",      role: "Eigenaar / DGA",      sector: "Labels",                  size: "15–40 fte",   context: "Veel downtime door handmatige reiniging anilox rollen. Concurrent heeft al JetCleaning machine — interesse maar twijfelt over investering." },
-      { name: "Marieke de Groot",      company: "De Groot Kartonage",            role: "Operations Manager",  sector: "Golfkarton",              size: "100–300 fte", context: "Bestaande klant, contract loopt einde jaar af. Concurrent heeft offerte ingediend. Kans om te upgraden naar uitgebreider pakket inclusief audit." },
-      { name: "Frank Bosman",          company: "Bosman Flexibles International", role: "Plant Manager",      sector: "Flexibele verpakkingen",   size: "200–500 fte", context: "Vestigingen in NL en BE. Zoeken naar gestandaardiseerde reinigingsoplossing voor alle locaties. Kostenbesparing is key." },
+      { name: "Peter van den Berg",    company: "Van den Berg Verpakkingen BV",  role: "Productiemanager",    sector: "Golfkarton",              size: "50–150 fte",  linkedin: "https://linkedin.com/in/peter-van-den-berg", context: "Recent geïnvesteerd in nieuwe flexopers, klagen over wisselende drukkwaliteit en hoog inktverbruik. Nog geen vaste reinigingspartner voor anilox rollen." },
+      { name: "Sabine Meijer",         company: "FlexPack Nederland",            role: "Technisch Directeur", sector: "Flexibele verpakkingen",   size: "80–200 fte",  linkedin: "https://linkedin.com/in/sabine-meijer", context: "Willen watergebaseerde inkten invoeren. Huidige reinigingsmiddelen niet geschikt voor nieuwe inktsystemen." },
+      { name: "Joost Hendriksen",      company: "Hendriksen Label & Print",      role: "Eigenaar / DGA",      sector: "Labels",                  size: "15–40 fte",   linkedin: "", context: "Veel downtime door handmatige reiniging anilox rollen. Concurrent heeft al JetCleaning machine — interesse maar twijfelt over investering." },
+      { name: "Marieke de Groot",      company: "De Groot Kartonage",            role: "Operations Manager",  sector: "Golfkarton",              size: "100–300 fte", linkedin: "https://linkedin.com/in/marieke-de-groot", context: "Bestaande klant, contract loopt einde jaar af. Concurrent heeft offerte ingediend. Kans om te upgraden naar uitgebreider pakket inclusief audit." },
+      { name: "Frank Bosman",          company: "Bosman Flexibles International", role: "Plant Manager",      sector: "Flexibele verpakkingen",   size: "200–500 fte", linkedin: "", context: "Vestigingen in NL en BE. Zoeken naar gestandaardiseerde reinigingsoplossing voor alle locaties. Kostenbesparing is key." },
     ];
 
     async function generateBriefing(lead, sellerCtx) {
@@ -234,7 +235,7 @@ Geef ALLEEN een JSON object, geen markdown:
     function LeadFlow() {
       const [leads, setLeads]         = React.useState(EXAMPLE_LEADS);
       const [sellerCtx, setSellerCtx] = React.useState("Accountmanager bij Clean Solutions Group — Packaging Print divisie. Wij verkopen reinigingsoplossingen voor flexodrukkers: Flexoclean reinigingsmiddelen, JetCleaning machines en locatie-audits. Doelgroep: productiemanagers en technisch directeuren bij drukkerijen (golfkarton, flexibles, labels). Pijnpunten: slechte drukkwaliteit door vervuilde anilox rollen, hoge reinigingskosten, onnodige downtime.");
-      const [newLead, setNewLead]     = React.useState({ name:"", company:"", role:"", sector:"", size:"20–50 fte", context:"" });
+      const [newLead, setNewLead]     = React.useState({ name:"", company:"", role:"", sector:"", size:"20–50 fte", context:"", linkedin:"" });
       const [briefings, setBriefings] = React.useState({});
       const [loading, setLoading]     = React.useState(false);
       const [generated, setGenerated] = React.useState(false);
@@ -255,7 +256,7 @@ Geef ALLEEN een JSON object, geen markdown:
       const addLead = () => {
         if (!newLead.name || !newLead.company) return;
         setLeads(p => [...p, newLead]);
-        setNewLead({ name:"", company:"", role:"", sector:"", size:"20–50 fte", context:"" });
+        setNewLead({ name:"", company:"", role:"", sector:"", size:"20–50 fte", context:"", linkedin:"" });
         setGenerated(false); setBriefings({});
       };
 
@@ -385,6 +386,10 @@ Geef ALLEEN een JSON object, geen markdown:
                               </select>
                             </div>
                             <div className="form-group span2">
+                              <label>LinkedIn URL (optioneel)</label>
+                              <input value={newLead.linkedin} onChange={e => setNewLead(p=>({...p,linkedin:e.target.value}))} placeholder="https://linkedin.com/in/..." />
+                            </div>
+                            <div className="form-group span2">
                               <label>Context / koopsignaal</label>
                               <textarea value={newLead.context} onChange={e => setNewLead(p=>({...p,context:e.target.value}))} rows={3} placeholder="Bijv: klagen over anilox vervuiling, willen overstappen op watergebaseerde inkten..." />
                             </div>
@@ -483,6 +488,12 @@ Geef ALLEEN een JSON object, geen markdown:
                                 <div className="lead-card-footer">
                                   <button className="btn btn-primary" style={{padding:"7px 14px", fontSize:12}}>📞 Bellen</button>
                                   <button className="btn btn-ghost" style={{padding:"7px 14px", fontSize:12}}>✉️ Mailen</button>
+                                  {lead.linkedin && (
+                                    <a href={lead.linkedin} target="_blank" rel="noopener noreferrer"
+                                      className="btn btn-ghost" style={{padding:"7px 14px", fontSize:12, textDecoration:"none"}}>
+                                      🔗 LinkedIn
+                                    </a>
+                                  )}
                                   <button
                                     className={`btn ${crm[lead.idx] ? "btn-green" : "btn-secondary"}`}
                                     style={{padding:"7px 14px", fontSize:12}}
