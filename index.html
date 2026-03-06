@@ -342,12 +342,12 @@ Geef ALLEEN een JSON object, geen markdown:
                     </div>
                     <div className="stat-card">
                       <div className="stat-label">Top-5 gegenereerd</div>
-                      <div className="stat-value green">{generated ? topLeads.length : "–"}</div>
+                      <div className="stat-value green">{generated ? topLeads.length : <span style={{color:"var(--grey-300)", fontSize:20}}>–</span>}</div>
                     </div>
                     <div className="stat-card">
                       <div className="stat-label">Urgent</div>
                       <div className="stat-value" style={{color:"var(--red)"}}>
-                        {generated ? topLeads.filter(l => (l.b?.prioriteit||0) >= 8).length : "–"}
+                        {generated ? topLeads.filter(l => (l.b?.prioriteit||0) >= 8).length : <span style={{color:"var(--grey-300)", fontSize:20}}>–</span>}
                       </div>
                     </div>
                     <div className="stat-card">
@@ -365,7 +365,7 @@ Geef ALLEEN een JSON object, geen markdown:
                           <span className="badge badge-grey">{leads.length} leads</span>
                         </div>
                         <div className="card-body">
-                          <div className="form-grid">
+                          <div className="form-grid" style={{gridTemplateColumns:"1fr"}}>
                             <div className="form-group">
                               <label>Naam</label>
                               <input value={newLead.name} onChange={e => setNewLead(p=>({...p,name:e.target.value}))} placeholder="Jan de Vries" />
@@ -385,11 +385,11 @@ Geef ALLEEN een JSON object, geen markdown:
                                 {["Golfkarton","Flexibele verpakkingen","Labels","Offsetdruk","Diepdruk"].map(s => <option key={s}>{s}</option>)}
                               </select>
                             </div>
-                            <div className="form-group span2">
+                            <div className="form-group">
                               <label>LinkedIn URL (optioneel)</label>
                               <input value={newLead.linkedin} onChange={e => setNewLead(p=>({...p,linkedin:e.target.value}))} placeholder="https://linkedin.com/in/..." />
                             </div>
-                            <div className="form-group span2">
+                            <div className="form-group">
                               <label>Context / koopsignaal</label>
                               <textarea value={newLead.context} onChange={e => setNewLead(p=>({...p,context:e.target.value}))} rows={3} placeholder="Bijv: klagen over anilox vervuiling, willen overstappen op watergebaseerde inkten..." />
                             </div>
