@@ -4,13 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LeadFlow — SalesFlow AI</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23204C8D'/><text y='48' x='12' font-size='40'>🎤</text></svg>" />
+
+  <!-- Supabase Auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- React via CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
   <style>
-    /* ── CSS VARIABLES — exact match met VisitFlow ── */
     :root {
       --blue:        #204C8D;
       --blue-light:  #2E6BC4;
@@ -38,6 +45,40 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--grey-50); color: var(--grey-800); display: flex; min-height: 100vh; }
 
+    /* ── LOGIN SCREEN ── */
+    .login-wrap {
+      min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
+    }
+    .login-card {
+      background: white; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .login-logo-icon { width: 44px; height: 44px; background: var(--blue); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .login-logo-text { font-size: 22px; font-weight: 700; color: var(--blue-dark); }
+    .login-logo-sub  { font-size: 12px; color: var(--grey-400); margin-top: 2px; }
+    .login-title { font-size: 20px; font-weight: 700; color: var(--grey-800); margin-bottom: 6px; }
+    .login-sub   { font-size: 14px; color: var(--grey-400); margin-bottom: 24px; }
+    .login-label { font-size: 12px; font-weight: 600; color: var(--grey-600); margin-bottom: 6px; display: block; }
+    .login-input {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--grey-200); border-radius: 8px;
+      font-size: 14px; font-family: inherit; color: var(--grey-800); outline: none; margin-bottom: 16px;
+      transition: border-color 0.15s;
+    }
+    .login-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(32,76,141,0.08); }
+    .login-btn {
+      width: 100%; padding: 11px; background: var(--blue); color: white; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .login-btn:hover:not(:disabled) { background: var(--blue-light); }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-msg { margin-top: 14px; font-size: 13px; text-align: center; }
+    .login-msg.success { color: var(--green); }
+    .login-msg.error   { color: var(--red); }
+    .login-footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--grey-100); font-size: 12px; color: var(--grey-400); text-align: center; }
+
     /* ── SIDEBAR ── */
     .sidebar {
       width: var(--sidebar-w); background: var(--blue-dark);
@@ -60,6 +101,12 @@
     .user-avatar { width: 32px; height: 32px; background: var(--blue-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
     .user-name { font-size: 13px; font-weight: 600; color: white; }
     .user-role { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .logout-btn {
+      margin-left: auto; background: transparent; border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5); padding: 4px 8px; border-radius: 6px; font-size: 11px;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .logout-btn:hover { border-color: rgba(255,255,255,0.4); color: white; }
 
     /* ── MAIN ── */
     .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
@@ -174,19 +221,100 @@
 <body>
   <div id="root"></div>
 
+  <script>
+    // ── Supabase initialisatie ──
+    const SUPABASE_URL  = "https://fgsvssfktlozeelwpdks.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnc3Zzc2ZrdGxvemVlbHdwZGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM1MTYsImV4cCI6MjA4OTI2OTUxNn0.81uZ5fOTW2AGutqTa5ZB3DLBwQgsouF_4NHFnrn45HE";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  </script>
+
   <script type="text/babel">
 
     const WORKER_URL = "https://salesflow-proxy.rickhermanns.workers.dev";
 
-    const EXAMPLE_LEADS = [
-      { name: "Peter van den Berg",    company: "Van den Berg Verpakkingen BV",  role: "Productiemanager",    sector: "Golfkarton",              size: "50–150 fte",  linkedin: "https://linkedin.com/in/peter-van-den-berg", context: "Recent geïnvesteerd in nieuwe flexopers, klagen over wisselende drukkwaliteit en hoog inktverbruik. Nog geen vaste reinigingspartner voor anilox rollen." },
-      { name: "Sabine Meijer",         company: "FlexPack Nederland",            role: "Technisch Directeur", sector: "Flexibele verpakkingen",   size: "80–200 fte",  linkedin: "https://linkedin.com/in/sabine-meijer", context: "Willen watergebaseerde inkten invoeren. Huidige reinigingsmiddelen niet geschikt voor nieuwe inktsystemen." },
-      { name: "Joost Hendriksen",      company: "Hendriksen Label & Print",      role: "Eigenaar / DGA",      sector: "Labels",                  size: "15–40 fte",   linkedin: "", context: "Veel downtime door handmatige reiniging anilox rollen. Concurrent heeft al JetCleaning machine — interesse maar twijfelt over investering." },
-      { name: "Marieke de Groot",      company: "De Groot Kartonage",            role: "Operations Manager",  sector: "Golfkarton",              size: "100–300 fte", linkedin: "https://linkedin.com/in/marieke-de-groot", context: "Bestaande klant, contract loopt einde jaar af. Concurrent heeft offerte ingediend. Kans om te upgraden naar uitgebreider pakket inclusief audit." },
-      { name: "Frank Bosman",          company: "Bosman Flexibles International", role: "Plant Manager",      sector: "Flexibele verpakkingen",   size: "200–500 fte", linkedin: "", context: "Vestigingen in NL en BE. Zoeken naar gestandaardiseerde reinigingsoplossing voor alle locaties. Kostenbesparing is key." },
-    ];
+    // ── Helper: initials uit naam ──
+    function getInitials(name) {
+      if (!name) return "??";
+      return name.split(" ").filter(Boolean).slice(0,2).map(n => n[0]).join("").toUpperCase();
+    }
 
-    async function generateBriefing(lead, sellerCtx) {
+    // ── Helper: user display name uit email ──
+    function displayName(email) {
+      if (!email) return "Gebruiker";
+      return email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // ────────────────────────────────────────────────
+    // LOGIN SCREEN
+    // ────────────────────────────────────────────────
+    function LoginScreen() {
+      const [email, setEmail]   = React.useState("");
+      const [loading, setLoading] = React.useState(false);
+      const [msg, setMsg]       = React.useState(null);
+      const [isError, setIsError] = React.useState(false);
+
+      const handleLogin = async () => {
+        if (!email || !email.includes("@")) {
+          setMsg("Vul een geldig e-mailadres in."); setIsError(true); return;
+        }
+        setLoading(true); setMsg(null);
+        const { error } = await sb.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: "https://dev1.rickhermanns.nl" }
+        });
+        setLoading(false);
+        if (error) {
+          setMsg("Fout: " + error.message); setIsError(true);
+        } else {
+          setMsg("✓ Controleer je inbox — we hebben een inloglink gestuurd."); setIsError(false);
+        }
+      };
+
+      const handleKey = (e) => { if (e.key === "Enter") handleLogin(); };
+
+      return (
+        <div className="login-wrap">
+          <div className="login-card">
+            <div className="login-logo">
+              <div className="login-logo-icon">🎯</div>
+              <div>
+                <div className="login-logo-text">LeadFlow</div>
+                <div className="login-logo-sub">SalesFlow AI Suite</div>
+              </div>
+            </div>
+
+            <div className="login-title">Inloggen</div>
+            <div className="login-sub">Vul je e-mailadres in — je ontvangt een magische inloglink.</div>
+
+            <label className="login-label">E-mailadres</label>
+            <input
+              className="login-input"
+              type="email"
+              placeholder="jouw@email.nl"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={handleKey}
+              disabled={loading}
+            />
+
+            <button className="login-btn" onClick={handleLogin} disabled={loading || !email}>
+              {loading ? "Versturen..." : "Stuur inloglink →"}
+            </button>
+
+            {msg && <div className={`login-msg ${isError ? "error" : "success"}`}>{msg}</div>}
+
+            <div className="login-footer">
+              Alleen toegang op uitnodiging · Rick Hermanns Consulting
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ────────────────────────────────────────────────
+    // GENERATE BRIEFING — met auth token
+    // ────────────────────────────────────────────────
+    async function generateBriefing(lead, sellerCtx, accessToken) {
       const prompt = `Je bent een AI sales intelligence assistent voor de packaging print industrie. Genereer een scherpe lead briefing.
 
 LEAD:
@@ -212,7 +340,11 @@ Geef ALLEEN een JSON object, geen markdown:
       try {
         const res = await fetch(WORKER_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            // JWT token voor Cloudflare Worker authenticatie
+            "Authorization": `Bearer ${accessToken}`
+          },
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: 800,
@@ -228,11 +360,22 @@ Geef ALLEEN een JSON object, geen markdown:
       }
     }
 
-    function getInitials(name) {
-      return name.split(" ").filter(Boolean).slice(0,2).map(n => n[0]).join("").toUpperCase();
-    }
+    // ────────────────────────────────────────────────
+    // MAIN APP
+    // ────────────────────────────────────────────────
+    const EXAMPLE_LEADS = [
+      { name: "Peter van den Berg",    company: "Van den Berg Verpakkingen BV",  role: "Productiemanager",    sector: "Golfkarton",              size: "50–150 fte",  linkedin: "https://linkedin.com/in/peter-van-den-berg", context: "Recent geïnvesteerd in nieuwe flexopers, klagen over wisselende drukkwaliteit en hoog inktverbruik. Nog geen vaste reinigingspartner voor anilox rollen." },
+      { name: "Sabine Meijer",         company: "FlexPack Nederland",            role: "Technisch Directeur", sector: "Flexibele verpakkingen",   size: "80–200 fte",  linkedin: "https://linkedin.com/in/sabine-meijer", context: "Willen watergebaseerde inkten invoeren. Huidige reinigingsmiddelen niet geschikt voor nieuwe inktsystemen." },
+      { name: "Joost Hendriksen",      company: "Hendriksen Label & Print",      role: "Eigenaar / DGA",      sector: "Labels",                  size: "15–40 fte",   linkedin: "", context: "Veel downtime door handmatige reiniging anilox rollen. Concurrent heeft al JetCleaning machine — interesse maar twijfelt over investering." },
+      { name: "Marieke de Groot",      company: "De Groot Kartonage",            role: "Operations Manager",  sector: "Golfkarton",              size: "100–300 fte", linkedin: "https://linkedin.com/in/marieke-de-groot", context: "Bestaande klant, contract loopt einde jaar af. Concurrent heeft offerte ingediend. Kans om te upgraden naar uitgebreider pakket inclusief audit." },
+      { name: "Frank Bosman",          company: "Bosman Flexibles International", role: "Plant Manager",      sector: "Flexibele verpakkingen",   size: "200–500 fte", linkedin: "", context: "Vestigingen in NL en BE. Zoeken naar gestandaardiseerde reinigingsoplossing voor alle locaties. Kostenbesparing is key." },
+    ];
 
-    function LeadFlow() {
+    function LeadFlow({ session, onSignOut }) {
+      const user = session.user;
+      const accessToken = session.access_token;
+      const name = user.user_metadata?.full_name || displayName(user.email);
+
       const [leads, setLeads]         = React.useState(EXAMPLE_LEADS);
       const [sellerCtx, setSellerCtx] = React.useState("Accountmanager bij Clean Solutions Group — Packaging Print divisie. Wij verkopen reinigingsoplossingen voor flexodrukkers: Flexoclean reinigingsmiddelen, JetCleaning machines en locatie-audits. Doelgroep: productiemanagers en technisch directeuren bij drukkerijen (golfkarton, flexibles, labels). Pijnpunten: slechte drukkwaliteit door vervuilde anilox rollen, hoge reinigingskosten, onnodige downtime.");
       const [newLead, setNewLead]     = React.useState({ name:"", company:"", role:"", sector:"", size:"20–50 fte", context:"", linkedin:"" });
@@ -246,12 +389,12 @@ Geef ALLEEN een JSON object, geen markdown:
         setLoading(true); setGenerated(false); setBriefings({});
         const result = {};
         for (let i = 0; i < leads.length; i++) {
-          const b = await generateBriefing(leads[i], sellerCtx);
+          const b = await generateBriefing(leads[i], sellerCtx, accessToken);
           if (b) result[i] = b;
           setBriefings({ ...result });
         }
         setLoading(false); setGenerated(true);
-      }, [leads, sellerCtx]);
+      }, [leads, sellerCtx, accessToken]);
 
       const addLead = () => {
         if (!newLead.name || !newLead.company) return;
@@ -268,11 +411,6 @@ Geef ALLEEN een JSON object, geen markdown:
         : [];
 
       const priorityClass = (score) => score >= 8 ? "urgent" : score >= 6 ? "high" : "";
-      const priorityBadge = (score) => score >= 8
-        ? <span className="badge badge-red">Urgent</span>
-        : score >= 6
-        ? <span className="badge badge-amber">Hoge kans</span>
-        : <span className="badge badge-blue">{leads.find ? "" : ""}</span>;
 
       return (
         <>
@@ -305,17 +443,17 @@ Geef ALLEEN een JSON object, geen markdown:
             </div>
 
             <div className="sidebar-footer">
-              <div className="user-avatar">RH</div>
-              <div>
-                <div className="user-name">Rick Hermanns</div>
+              <div className="user-avatar">{getInitials(name)}</div>
+              <div style={{flex:1, minWidth:0}}>
+                <div className="user-name" style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{name}</div>
                 <div className="user-role">SalesFlow AI</div>
               </div>
+              <button className="logout-btn" onClick={onSignOut} title="Uitloggen">↩</button>
             </div>
           </aside>
 
           {/* Main */}
           <div className="main">
-            {/* Topbar */}
             <div className="topbar">
               <div className="topbar-title">
                 {activeNav === "leads" ? "Top-5 Leads vandaag" : "Propositie instellen"}
@@ -334,7 +472,6 @@ Geef ALLEEN een JSON object, geen markdown:
               {/* ── LEADS VIEW ── */}
               {activeNav === "leads" && (
                 <>
-                  {/* Stats */}
                   <div className="stats-grid">
                     <div className="stat-card">
                       <div className="stat-label">Leads in lijst</div>
@@ -357,7 +494,6 @@ Geef ALLEEN een JSON object, geen markdown:
                   </div>
 
                   <div className="two-col">
-                    {/* Left: add lead */}
                     <div>
                       <div className="card">
                         <div className="card-header">
@@ -391,7 +527,7 @@ Geef ALLEEN een JSON object, geen markdown:
                             </div>
                             <div className="form-group">
                               <label>Context / koopsignaal</label>
-                              <textarea value={newLead.context} onChange={e => setNewLead(p=>({...p,context:e.target.value}))} rows={3} placeholder="Bijv: klagen over anilox vervuiling, willen overstappen op watergebaseerde inkten..." />
+                              <textarea value={newLead.context} onChange={e => setNewLead(p=>({...p,context:e.target.value}))} rows={3} placeholder="Bijv: klagen over anilox vervuiling..." />
                             </div>
                           </div>
                           <button className="btn btn-primary" onClick={addLead} disabled={!newLead.name||!newLead.company} style={{width:"100%"}}>
@@ -400,7 +536,6 @@ Geef ALLEEN een JSON object, geen markdown:
                         </div>
                       </div>
 
-                      {/* Leads in lijst */}
                       {leads.length > 0 && (
                         <div className="card" style={{marginTop:16}}>
                           <div className="card-header">
@@ -420,7 +555,6 @@ Geef ALLEEN een JSON object, geen markdown:
                       )}
                     </div>
 
-                    {/* Right: results */}
                     <div>
                       <div className="section-header">
                         <span className="section-title">
@@ -544,8 +678,50 @@ Geef ALLEEN een JSON object, geen markdown:
       );
     }
 
+    // ────────────────────────────────────────────────
+    // ROOT — AUTH GATE
+    // ────────────────────────────────────────────────
+    function App() {
+      const [session, setSession] = React.useState(undefined); // undefined = laden
+
+      React.useEffect(() => {
+        // Haal huidige sessie op
+        sb.auth.getSession().then(({ data: { session } }) => {
+          setSession(session);
+        });
+
+        // Luister naar auth-wijzigingen (o.a. magic link redirect)
+        const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+          setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+      }, []);
+
+      const handleSignOut = async () => {
+        await sb.auth.signOut();
+        setSession(null);
+      };
+
+      // Laden
+      if (session === undefined) {
+        return (
+          <div style={{minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"var(--grey-50)"}}>
+            <div className="spinner" />
+          </div>
+        );
+      }
+
+      // Niet ingelogd → login scherm
+      if (!session) return <LoginScreen />;
+
+      // Ingelogd → app
+      return <LeadFlow session={session} onSignOut={handleSignOut} />;
+    }
+
     const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<LeadFlow />);
+    root.render(<App />);
+
   </script>
 </body>
 </html>
